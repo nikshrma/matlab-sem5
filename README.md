@@ -1452,3 +1452,697 @@ disp([r nullity])
 disp(verified)
 disp(thetaDeg)
 ```
+
+## Labsheet 5
+
+### Gram–Schmidt orthogonalisation and QR decomposition
+
+#### Question 1 — Test whether the given vectors form an orthonormal set
+
+**Manual solution**
+
+```matlab
+A = [1/sqrt(2), 1/sqrt(2), 0; 1/sqrt(2), -1/sqrt(2), 0; 0, 0, 1];
+
+G = zeros(3);
+for i = 1:3
+    for j = 1:3
+        for k = 1:3
+            G(i,j) = G(i,j) + A(k,i)*A(k,j);
+        end
+    end
+end
+disp(G)
+disp(max(abs(G(:) - reshape(eye(3),[],1))) < 1e-12)
+```
+
+**Built-in solution**
+
+```matlab
+A = [1/sqrt(2), 1/sqrt(2), 0; 1/sqrt(2), -1/sqrt(2), 0; 0, 0, 1];
+
+G = A.'*A;
+disp(G)
+disp(norm(G - eye(3),'fro') < 1e-12)
+```
+
+#### Question 2 — Convert the given vectors into orthonormal vectors
+
+**Manual solution**
+
+```matlab
+A = [1 3; 2 -1];
+
+[m,n] = size(A);
+Q = zeros(m,n);
+R = zeros(n);
+for j = 1:n
+    v = A(:,j);
+    for i = 1:j-1
+        R(i,j) = Q(:,i).'*v;
+        v = v - R(i,j)*Q(:,i);
+    end
+    R(j,j) = sqrt(sum(v.^2));
+    Q(:,j) = v/R(j,j);
+end
+
+disp(Q)
+disp(Q.'*Q)
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 3; 2 -1];
+
+[Q,R] = qr(A,0);
+
+disp(Q)
+disp(Q.'*Q)
+```
+
+#### Question 3 — Convert the given vectors into orthonormal vectors
+
+**Manual solution**
+
+```matlab
+A = [1 2 1; 2 -1 1; -1 0 3];
+
+[m,n] = size(A);
+Q = zeros(m,n);
+R = zeros(n);
+for j = 1:n
+    v = A(:,j);
+    for i = 1:j-1
+        R(i,j) = Q(:,i).'*v;
+        v = v - R(i,j)*Q(:,i);
+    end
+    R(j,j) = sqrt(sum(v.^2));
+    Q(:,j) = v/R(j,j);
+end
+
+disp(Q)
+disp(Q.'*Q)
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 2 1; 2 -1 1; -1 0 3];
+
+[Q,R] = qr(A,0);
+
+disp(Q)
+disp(Q.'*Q)
+```
+
+#### Question 4 — Find the QR decomposition using Gram–Schmidt
+
+**Manual solution**
+
+```matlab
+A = [1 2 1; 2 4 6; 1 1 1];
+
+[m,n] = size(A);
+Q = zeros(m,n);
+R = zeros(n);
+for j = 1:n
+    v = A(:,j);
+    for i = 1:j-1
+        R(i,j) = Q(:,i).'*v;
+        v = v - R(i,j)*Q(:,i);
+    end
+    R(j,j) = sqrt(sum(v.^2));
+    Q(:,j) = v/R(j,j);
+end
+
+disp(Q)
+disp(R)
+disp(norm(A-Q*R,'fro'))
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 2 1; 2 4 6; 1 1 1];
+
+[Q,R] = qr(A,0);
+
+disp(Q)
+disp(R)
+disp(norm(A-Q*R,'fro'))
+```
+
+## Labsheet 6
+
+### Singular value decomposition and low-rank approximation
+
+#### Question 1 — Compute the SVD and verify reconstruction
+
+The manual version builds the SVD from the eigendecomposition of the Gram matrix. The displayed error should be close to zero.
+
+**Manual solution**
+
+```matlab
+A = [3 1 1; -1 3 1];
+
+[V,D] = eig(A.'*A);
+[lambda,order] = sort(diag(D),'descend');
+V = V(:,order);
+
+sigma = sqrt(lambda(1:2));
+U = zeros(2);
+S = zeros(2,3);
+for j = 1:2
+    U(:,j) = A*V(:,j)/sigma(j);
+    S(j,j) = sigma(j);
+end
+
+disp(U)
+disp(S)
+disp(V)
+disp(norm(A - U*S*V.','fro'))
+```
+
+**Built-in solution**
+
+```matlab
+A = [3 1 1; -1 3 1];
+
+[U,S,V] = svd(A);
+
+disp(U)
+disp(S)
+disp(V)
+disp(norm(A - U*S*V.','fro'))
+```
+
+#### Question 2 — Compute the SVD and construct the rank-1 approximation
+
+The matrix is already rank 1. The manual version factors it as an outer product and uses reflections to complete the singular-vector bases.
+
+**Manual solution**
+
+```matlab
+A = [1 2 3; 2 4 6; 3 6 9; 4 8 12];
+
+p = A(:,1);
+v = A(1,:).'/p(1);
+np = sqrt(sum(p.^2));
+nv = sqrt(sum(v.^2));
+u1 = p/np;
+v1 = v/nv;
+
+% Reflect e1 onto each leading singular vector.
+eU = [1; 0; 0; 0];
+eV = [1; 0; 0];
+wU = eU - u1;
+wV = eV - v1;
+U = eye(4) - 2*(wU*wU.')/(wU.'*wU);
+V = eye(3) - 2*(wV*wV.')/(wV.'*wV);
+S = zeros(4,3);
+S(1,1) = np*nv;
+
+A1 = S(1,1)*U(:,1)*V(:,1).';
+disp(U)
+disp(S)
+disp(V)
+disp(A1)
+disp(norm(A-A1,'fro'))
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 2 3; 2 4 6; 3 6 9; 4 8 12];
+
+[U,S,V] = svd(A);
+
+A1 = S(1,1)*U(:,1)*V(:,1).';
+disp(U)
+disp(S)
+disp(V)
+disp(A1)
+disp(norm(A-A1,'fro'))
+```
+
+#### Question 3 — Compare rank-1 and rank-2 approximations
+
+The matrix has rank 2. The rank-2 approximation reconstructs it up to rounding error.
+
+**Manual solution**
+
+```matlab
+A = [1 2 3; 4 5 6; 7 8 9; 10 11 12];
+
+[V,D] = eig(A.'*A);
+[lambda,order] = sort(diag(D),'descend');
+V = V(:,order);
+
+% sigma_j*u_j = A*v_j, so each term is (A*v_j)*v_j'.
+v1 = V(:,1);
+v2 = V(:,2);
+A1 = (A*v1)*v1.';
+A2 = A1 + (A*v2)*v2.';
+
+disp(A1)
+disp(A2)
+error1 = norm(A-A1,'fro');
+error2 = norm(A-A2,'fro');
+fprintf('Rank-1 error: %.8g\nRank-2 error: %.8g\n',error1,error2);
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 2 3; 4 5 6; 7 8 9; 10 11 12];
+
+[U,S,V] = svd(A,'econ');
+A1 = U(:,1)*S(1,1)*V(:,1).';
+A2 = U(:,1:2)*S(1:2,1:2)*V(:,1:2).';
+
+disp(A1)
+disp(A2)
+error1 = norm(A-A1,'fro');
+error2 = norm(A-A2,'fro');
+fprintf('Rank-1 error: %.8g\nRank-2 error: %.8g\n',error1,error2);
+```
+
+## Labsheet 7
+
+### PCA and dimensionality reduction
+
+#### Question 1 — Perform PCA on the 2D data and plot the 1D scores
+
+Only PC1 has nonzero variance. The sign of a principal component and its scores may flip between versions.
+
+**Manual solution**
+
+```matlab
+X = [(2:9).' (1:8).'];
+
+n = size(X,1);
+Xc = X - sum(X,1)/n;
+C = (Xc.'*Xc)/(n-1);
+[V,D] = eig(C);
+[latent,idx] = sort(diag(D),'descend');
+coeff = V(:,idx);
+
+disp(Xc)
+disp(C)
+scores = Xc*coeff(:,1);
+
+disp(coeff)
+disp(latent)
+disp(scores)
+
+figure
+subplot(1,2,1)
+scatter(X(:,1),X(:,2),40,'filled')
+xlabel('Feature 1')
+ylabel('Feature 2')
+title('Original data')
+grid on
+subplot(1,2,2)
+scatter(scores,zeros(size(scores)),40,'filled')
+xlabel('PC1 score')
+yticks([])
+title('One-dimensional projection')
+grid on
+```
+
+**Built-in solution (Statistics and Machine Learning Toolbox)**
+
+```matlab
+X = [(2:9).' (1:8).'];
+
+[coeff,score,latent] = pca(X);
+scores = score(:,1);
+
+disp(coeff)
+disp(latent)
+disp(scores)
+
+figure
+subplot(1,2,1)
+scatter(X(:,1),X(:,2),40,'filled')
+xlabel('Feature 1')
+ylabel('Feature 2')
+title('Original data')
+grid on
+subplot(1,2,2)
+scatter(scores,zeros(size(scores)),40,'filled')
+xlabel('PC1 score')
+yticks([])
+title('One-dimensional projection')
+grid on
+```
+
+#### Question 2 — Add two features and reduce from 4D to 3D
+
+The three output columns are PC scores. Only PC1 has nonzero variance because all four centered features are identical.
+
+**Manual solution**
+
+```matlab
+X = [(2:9).' (1:8).' (3:10).' (0:7).'];
+
+n = size(X,1);
+Xc = X - sum(X,1)/n;
+C = (Xc.'*Xc)/(n-1);
+[V,D] = eig(C);
+[latent,idx] = sort(diag(D),'descend');
+coeff = V(:,idx);
+
+scores = Xc*coeff(:,1:3);
+
+disp(coeff(:,1:3))
+disp(latent)
+disp(scores)
+```
+
+**Built-in solution (Statistics and Machine Learning Toolbox)**
+
+```matlab
+X = [(2:9).' (1:8).' (3:10).' (0:7).'];
+
+[coeff,score,latent] = pca(X);
+scores = score(:,1:3);
+
+disp(coeff(:,1:3))
+disp(latent)
+disp(scores)
+```
+
+## Labsheet 8
+
+### Householder matrices and transformations
+
+#### Question 1 — Construct a Householder matrix for the first column
+
+This sign convention maps the first column to approximately `[-5; 0; 0]`.
+
+**Manual solution**
+
+```matlab
+A = [4 1; 3 2; 0 5];
+
+x = A(:,1);
+alpha = -sqrt(sum(x.^2));
+v = x - [alpha; 0; 0];
+H = eye(3) - 2*(v*v.')/(v.'*v);
+disp(H)
+disp(H*x)
+```
+
+#### Question 2 — Obtain QR decompositions using Householder transformations
+
+Each part has a separate script. QR factors can differ in sign. Part (iii) is rank deficient, so a diagonal entry of R is numerically zero.
+
+##### Part (i)
+
+**Manual solution**
+
+```matlab
+A = [1 1; 1 0; 0 1];
+
+[m,n] = size(A);
+Q = eye(m);
+R = A;
+tol = 1e-12*norm(A,'fro');
+for k = 1:min(m-1,n)
+    x = R(k:m,k);
+    if norm(x(2:end)) <= tol
+        continue
+    end
+    alpha = -sqrt(sum(x.^2));
+    if x(1) < 0
+        alpha = -alpha;
+    end
+    v = x;
+    v(1) = v(1) - alpha;
+    H = eye(m);
+    H(k:m,k:m) = eye(m-k+1) - 2*(v*v.')/(v.'*v);
+    R = H*R;
+    Q = Q*H;
+end
+
+disp(Q)
+disp(R)
+disp(norm(Q*R-A,'fro'))
+disp(norm(Q.'*Q-eye(size(Q,2)),'fro'))
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 1; 1 0; 0 1];
+
+[Q,R] = qr(A);
+
+disp(Q)
+disp(R)
+disp(norm(Q*R-A,'fro'))
+disp(norm(Q.'*Q-eye(size(Q,2)),'fro'))
+```
+
+##### Part (ii)
+
+**Manual solution**
+
+```matlab
+A = [3 2 1 -1; 1 3 1 -1; 4 1 3 1; -1 1 1 3];
+
+[m,n] = size(A);
+Q = eye(m);
+R = A;
+tol = 1e-12*norm(A,'fro');
+for k = 1:min(m-1,n)
+    x = R(k:m,k);
+    if norm(x(2:end)) <= tol
+        continue
+    end
+    alpha = -sqrt(sum(x.^2));
+    if x(1) < 0
+        alpha = -alpha;
+    end
+    v = x;
+    v(1) = v(1) - alpha;
+    H = eye(m);
+    H(k:m,k:m) = eye(m-k+1) - 2*(v*v.')/(v.'*v);
+    R = H*R;
+    Q = Q*H;
+end
+
+disp(Q)
+disp(R)
+disp(norm(Q*R-A,'fro'))
+disp(norm(Q.'*Q-eye(size(Q,2)),'fro'))
+```
+
+**Built-in solution**
+
+```matlab
+A = [3 2 1 -1; 1 3 1 -1; 4 1 3 1; -1 1 1 3];
+
+[Q,R] = qr(A);
+
+disp(Q)
+disp(R)
+disp(norm(Q*R-A,'fro'))
+disp(norm(Q.'*Q-eye(size(Q,2)),'fro'))
+```
+
+##### Part (iii)
+
+**Manual solution**
+
+```matlab
+A = [1 0 1 0; 0 1 0 1; -1 0 1 0; 0 1 0 1];
+
+[m,n] = size(A);
+Q = eye(m);
+R = A;
+tol = 1e-12*norm(A,'fro');
+for k = 1:min(m-1,n)
+    x = R(k:m,k);
+    if norm(x(2:end)) <= tol
+        continue
+    end
+    alpha = -sqrt(sum(x.^2));
+    if x(1) < 0
+        alpha = -alpha;
+    end
+    v = x;
+    v(1) = v(1) - alpha;
+    H = eye(m);
+    H(k:m,k:m) = eye(m-k+1) - 2*(v*v.')/(v.'*v);
+    R = H*R;
+    Q = Q*H;
+end
+
+disp(Q)
+disp(R)
+disp(norm(Q*R-A,'fro'))
+disp(norm(Q.'*Q-eye(size(Q,2)),'fro'))
+```
+
+**Built-in solution**
+
+```matlab
+A = [1 0 1 0; 0 1 0 1; -1 0 1 0; 0 1 0 1];
+
+[Q,R] = qr(A);
+
+disp(Q)
+disp(R)
+disp(norm(Q*R-A,'fro'))
+disp(norm(Q.'*Q-eye(size(Q,2)),'fro'))
+```
+
+## Labsheet 9
+
+### PageRank and spectral clustering
+
+#### Question 1 — Construct the webpage adjacency matrix and compute PageRank
+
+Rows are source pages and columns are destinations. Both scripts use a damping factor of 0.85 and uniform teleportation. Expected ranking: Page 3 > Page 2 > Page 1 > Page 4.
+
+**Manual solution**
+
+```matlab
+A = [0 1 1 0; 0 0 1 0; 1 1 0 0; 0 1 1 0];
+
+n = size(A,1);
+d = 0.85;
+P = A./sum(A,2);
+
+scores = ones(n,1)/n;
+for step = 1:1000
+    updated = d*P.'*scores + (1-d)/n*ones(n,1);
+    if sum(abs(updated-scores)) < 1e-12
+        scores = updated;
+        break
+    end
+    scores = updated;
+end
+
+[sortedScores,order] = sort(scores,'descend');
+disp(A)
+disp(table(order,sortedScores,'VariableNames',{'Page','PageRank'}))
+```
+
+**Built-in solution**
+
+```matlab
+A = [0 1 1 0; 0 0 1 0; 1 1 0 0; 0 1 1 0];
+
+n = size(A,1);
+d = 0.85;
+P = A./sum(A,2);
+
+scores = (eye(n) - d*P.') \ ((1-d)/n*ones(n,1));
+
+[sortedScores,order] = sort(scores,'descend');
+disp(A)
+disp(table(order,sortedScores,'VariableNames',{'Page','PageRank'}))
+```
+
+#### Question 2 — Use the Fiedler vector to partition the ten-node graph
+
+Both scripts use `eig` for the eigendecomposition, as requested by the sheet. The manual version builds the adjacency and degree matrices directly. The sign of the Fiedler vector can swap the cluster labels. The partition is {1, 2, 3, 4, 5} and {6, 7, 8, 9, 10}, with second-smallest eigenvalue approximately 0.96063.
+
+**Manual solution**
+
+```matlab
+edges = [1 2; 1 3; 1 6; 1 7; 2 4; 2 5; 3 5; 4 5; 5 7; 5 9;
+         6 7; 6 8; 7 8; 7 9; 7 10; 8 9; 8 10; 9 10];
+n = 10;
+
+A = zeros(n);
+for k = 1:size(edges,1)
+    i = edges(k,1);
+    j = edges(k,2);
+    A(i,j) = 1;
+    A(j,i) = 1;
+end
+D = zeros(n);
+for i = 1:n
+    D(i,i) = sum(A(i,:));
+end
+L = D - A;
+
+[V,E] = eig(full(L));
+[eigenvalues,idx] = sort(diag(E),'ascend');
+V = V(:,idx);
+fiedler = V(:,2);
+cluster1 = find(fiedler >= 0);
+cluster2 = find(fiedler < 0);
+disp(A)
+disp(D)
+disp(L)
+disp(eigenvalues)
+disp(V)
+disp(fiedler)
+disp(cluster1.')
+disp(cluster2.')
+
+x = [1 0 2 0 2 5 4 6 4 6];
+y = [2 1 1 0 0 2 1 1 0 0];
+
+figure
+hold on
+for k = 1:size(edges,1)
+    nodes = edges(k,:);
+    plot(x(nodes),y(nodes),'Color',[0.55 0.55 0.55])
+end
+scatter(x(cluster1),y(cluster1),90,'b','filled')
+scatter(x(cluster2),y(cluster2),90,'r','filled')
+for i = 1:n
+    text(x(i),y(i)+0.16,num2str(i),'HorizontalAlignment','center')
+end
+axis equal
+xlim([-0.5 6.5])
+ylim([-0.4 2.5])
+axis off
+title('Spectral clustering by Fiedler vector sign')
+```
+
+**Built-in solution**
+
+```matlab
+edges = [1 2; 1 3; 1 6; 1 7; 2 4; 2 5; 3 5; 4 5; 5 7; 5 9;
+         6 7; 6 8; 7 8; 7 9; 7 10; 8 9; 8 10; 9 10];
+n = 10;
+
+G = graph(edges(:,1),edges(:,2),[],n);
+A = full(adjacency(G));
+D = diag(degree(G));
+L = laplacian(G);
+
+[V,E] = eig(full(L));
+[eigenvalues,idx] = sort(diag(E),'ascend');
+V = V(:,idx);
+fiedler = V(:,2);
+cluster1 = find(fiedler >= 0);
+cluster2 = find(fiedler < 0);
+disp(A)
+disp(D)
+disp(L)
+disp(eigenvalues)
+disp(V)
+disp(fiedler)
+disp(cluster1.')
+disp(cluster2.')
+
+x = [1 0 2 0 2 5 4 6 4 6];
+y = [2 1 1 0 0 2 1 1 0 0];
+
+figure
+p = plot(G,'XData',x,'YData',y,'MarkerSize',8);
+highlight(p,cluster1,'NodeColor','b')
+highlight(p,cluster2,'NodeColor','r')
+axis equal
+axis off
+title('Spectral clustering by Fiedler vector sign')
+```
