@@ -1,6 +1,6 @@
-# UMC513 — MATLAB solutions for Labsheets 1–4
+# UMC513 — MATLAB solutions for Labsheets 1–9
 
-Each code block includes its own inputs. Run any block independently. For the two questions that explicitly ask for a function, paste the entire block into a new MATLAB script and run it. Blocks marked **Symbolic Math Toolbox** require that toolbox.
+Each code block includes its own inputs. Run any block independently. For the two questions that explicitly ask for a function, paste the entire block into a new MATLAB script and run it. Toolbox-dependent solutions are marked.
 
 ## Labsheet 1
 
@@ -577,12 +577,13 @@ end
 **Built-in solution**
 
 ```matlab
-S = [1 1 4; 2 1 5; 1 -1 2];
-w = [1; -3; 5];
-inSpan = rank(S) == rank([S w]);
-disp(inSpan)            % true
-if inSpan
-    disp(S\w)           % [-7.5; -5.5; 3.5]
+A=[1 1 4;2 1 5;1 -1 2];
+B=[1;-3;5];
+if rank(A)==rank([A B])
+    disp("yes it lies in span");
+    disp(A \ B);
+else
+    disp("no");
 end
 ```
 
@@ -598,43 +599,49 @@ k = 3*a - b;
 disp(k)
 ```
 
-**Built-in solution**
+**Built-in solution (Symbolic Math Toolbox)**
 
 ```matlab
-S = [1 1; 2 0; 3 -1];
-weights = S(1:2,:)\[2; 1];
-k = S(3,:)*weights;
-disp(k)                  % 0
+syms a b k
+
+A = [1 1; 2 0; 3 -1];
+X = [a;b];
+B = [2;1;k];
+
+sol = solve(A*X == B,[a b k]);
+
+disp(sol.k)
 ```
 
 #### Question 3 — Plot the span of u and v as a function
 
-This question asks for a function. The full script includes a local function. The plot shows a finite patch of the plane.
+This question asks for a function. The full script includes a local function. The arrows show sampled linear combinations in the plane.
 
 **Built-in solution**
 
 ```matlab
-plotSpan([1; 1; 1],[1; 2; 3])
+u = [1;1;1];
+v = [1;2;3];
 
-function plotSpan(u,v)
-    u = u(:);
-    v = v(:);
-    [a,b] = meshgrid(linspace(-2,2,31));
-    X = a*u(1) + b*v(1);
-    Y = a*u(2) + b*v(2);
-    Z = a*u(3) + b*v(3);
+plotspan(u,v)
 
-    figure
-    surf(X,Y,Z,'FaceAlpha',0.35,'EdgeColor','none');
-    hold on
-    quiver3(0,0,0,u(1),u(2),u(3),0,'r','LineWidth',2);
-    quiver3(0,0,0,v(1),v(2),v(3),0,'b','LineWidth',2);
-    axis equal
-    grid on
-    xlabel('x'); ylabel('y'); zlabel('z');
-    title('Span of u and v')
-    legend('Span patch','u','v','Location','best')
-    view(3)
+function plotspan(u,v)
+
+figure
+hold on
+
+for a = -5:5
+    for b = -5:5
+        p = a*u + b*v;
+        quiver3(0,0,0,p(1),p(2),p(3),0)
+    end
+end
+
+grid on
+axis equal
+view(3)
+hold off
+
 end
 ```
 
@@ -645,19 +652,16 @@ end
 **Built-in solution**
 
 ```matlab
-u = [1; 1; 1]; v = [1; 0; 1]; w = [2; 2; 2];
 figure
+quiver3(0,0,0,1,1,1,0)
 hold on
-quiver3(0,0,0,w(1),w(2),w(3),0,'k','LineWidth',2);
-quiver3(0,0,0,u(1),u(2),u(3),0,'r','LineWidth',2);
-quiver3(0,0,0,v(1),v(2),v(3),0,'b','LineWidth',2);
+quiver3(0,0,0,1,0,1,0)
+quiver3(0,0,0,2,2,2,0)
 axis equal
 grid on
-xlabel('x'); ylabel('y'); zlabel('z');
-legend('w','u','v','Location','best')
-title('u and w point along the same line')
 view(3)
-disp(all(w == 2*u))   % true: w = 2*u, so the set is dependent
+legend('u','v','w')
+disp('w = 2*u, so the set is linearly dependent.')
 ```
 
 #### Question 2 — Check independence of the three given vectors
@@ -676,8 +680,13 @@ disp(d ~= 0)
 **Built-in solution**
 
 ```matlab
-M = [1 0 -1; 2 3 0; 0 1 1];
-disp(rank(M) == size(M,2))   % true
+A = [1 0 -1; 2 3 0; 0 1 1];
+
+if rank(A) == size(A,2)
+    disp('Linearly Independent')
+else
+    disp('Linearly Dependent')
+end
 ```
 
 #### Question 3 — Find all k for which the vectors are independent
@@ -723,11 +732,16 @@ disp(d ~= 0)
 **Built-in solution**
 
 ```matlab
-B = [1 1 4; 2 1 5; 1 -1 2];
+A = [1 1 4; 2 1 5; 1 -1 2];
 
-r = rank(B);
-disp(r)          % 3
-disp(r == 3)     % Three independent columns span R^3
+[m,n] = size(A);
+r = rank(A);
+
+if r == m && r == n
+    disp('Forms a Basis')
+else
+    disp('Does not form a Basis')
+end
 ```
 
 #### Question 2 — Coordinate vector of (1, −3, 5) relative to B
@@ -803,52 +817,49 @@ This question asks for a function. Each script includes its own local function. 
 ```matlab
 A = [1 3 1 -2 -3; 1 4 3 -1 -4;
      2 3 -4 -7 -3; 3 8 1 -7 -8];
-[E,R,r] = echelonForms(A);
+[E,r,pivots] = ref_manual(A);
+R = E;
+for i = r:-1:1
+    j = pivots(i);
+    R(i,:) = R(i,:)/R(i,j);
+    for k = 1:i-1
+        R(k,:) = R(k,:) - R(k,j)*R(i,:);
+    end
+end
 disp(E)
 disp(R)
 disp(r)
 disp(r < min(size(A)))
 
-function [E,R,r,pivots] = echelonForms(A)
-    E = double(A);
-    [m,n] = size(E);
-    scale = max([1; abs(E(:))]);
-    tol = max(m,n)*eps(scale);
-    pivots = zeros(1,min(m,n));
-    r = 0;
+function [A,count,pivots] = ref_manual(A) 
 
-    for col = 1:n
-        if r == m
-            break
-        end
-        row = r+1;
-        [pivotSize,offset] = max(abs(E(row:m,col)));
-        if pivotSize <= tol
-            E(row:m,col) = 0;
-            continue
-        end
+[m,n] = size(A);
+r = 1;
+pivots = [];
 
-        pivotRow = row+offset-1;
-        E([row pivotRow],:) = E([pivotRow row],:);
-        for i = row+1:m
-            factor = E(i,col)/E(row,col);
-            E(i,col:n) = E(i,col:n) - factor*E(row,col:n);
-            E(i,col) = 0;
-        end
-        r = row;
-        pivots(r) = col;
+for j = 1:n %for all cols we find pivots
+    if r > m
+        break
     end
 
-    pivots = pivots(1:r);
-    R = E;
-    for row = r:-1:1
-        col = pivots(row);
-        R(row,:) = R(row,:)/R(row,col);
-        for i = 1:row-1
-            R(i,:) = R(i,:) - R(i,col)*R(row,:);
-            R(i,col) = 0;
-        end
+    p = find(abs(A(r:m,j)) > 1e-10,1);  %pivot index
+
+    if isempty(p)
+        continue
     end
+
+    p = p+r-1; %pivot index found in extracted matrix, check its idx in original one
+    A([r p],:) = A([p r],:); %swapping both rows
+
+    for i = r+1:m
+        factor = A(i,j)/A(r,j); 
+        A(i,:) = A(i,:) - factor*A(r,:);
+    end
+
+    pivots(r) = j;
+    r = r+1;
+end
+count = r-1;
 end
 ```
 
@@ -888,64 +899,65 @@ end
 
 ```matlab
 A = [1 5 -1; 1 0 1; 3 5 0];
-b = [0; 4; 6];
-
-E = double([A b]);
-[m,n] = size(E);
-scale = max([1; abs(E(:))]);
-tol = max(m,n)*eps(scale);
-pivots = zeros(1,min(m,n));
-r = 0;
-
-for col = 1:n
-    if r == m
-        break
-    end
-    row = r+1;
-    [pivotSize,offset] = max(abs(E(row:m,col)));
-    if pivotSize <= tol
-        E(row:m,col) = 0;
-        continue
-    end
-
-    pivotRow = row+offset-1;
-    E([row pivotRow],:) = E([pivotRow row],:);
-    for i = row+1:m
-        factor = E(i,col)/E(row,col);
-        E(i,col:n) = E(i,col:n) - factor*E(row,col:n);
-        E(i,col) = 0;
-    end
-    r = row;
-    pivots(r) = col;
-end
-
-pivots = pivots(1:r);
-R = E;
-for row = r:-1:1
-    col = pivots(row);
-    R(row,:) = R(row,:)/R(row,col);
-    for i = 1:row-1
-        R(i,:) = R(i,:) - R(i,col)*R(row,:);
-        R(i,col) = 0;
-    end
-end
-
-n = size(A,2);
-if ~any(pivots == n+1)
-    disp('Consistent')
-    xGauss = zeros(n,1);
-    for i = n:-1:1
-        remainder = E(i,end);
-        for j = i+1:n
-            remainder = remainder - E(i,j)*xGauss(j);
-        end
-        xGauss(i) = remainder/E(i,i);
-    end
-    xGaussJordan = R(:,end);
-    disp(xGauss)
-    disp(xGaussJordan)
-else
+B = [0;4;6];
+[m,n] = size(A);
+if rank(A) ~= rank([A B])
     disp('Inconsistent')
+elseif rank(A) < n
+    disp('Infinitely many solutions')
+else
+    C = [A B];
+    r = 1;
+
+    % Forward elimination (REF)
+    for j = 1:n
+
+        if r > m
+            break
+        end
+
+        p = find(abs(C(r:m,j)) > 1e-10,1);
+
+        if isempty(p)
+            continue
+        end
+
+        p = p+r-1;
+        C([r p],:) = C([p r],:);
+
+        for i = r+1:m
+            factor = C(i,j)/C(r,j);
+            C(i,:) = C(i,:) - factor*C(r,:);
+        end
+
+        r = r+1;
+    end
+
+    % Back substitution
+    X = zeros(n,1);
+
+    for i = n:-1:1
+        s = 0;
+
+        for j = i+1:n
+            s = s+C(i,j)*X(j);
+        end
+
+        X(i) = (C(i,end)-s)/C(i,i);
+    end
+
+    disp(X)
+end
+
+% Gauss–Jordan reduction, using the REF above
+if rank(A) == rank([A B]) && rank(A) == n
+    for i = n:-1:1
+        C(i,:) = C(i,:)/C(i,i);
+        for j = 1:i-1
+            C(j,:) = C(j,:) - C(j,i)*C(i,:);
+        end
+    end
+    disp(C(1:n,end))
 end
 ```
 
@@ -1039,14 +1051,20 @@ disp(size(nullBasis,2))
 **Built-in solution**
 
 ```matlab
-A = [1 2 -2 2 -1; 0 0 1 2 4; 0 0 0 1 -2; 0 0 0 0 0];
-[~,pivots] = rref(A);
-columnBasis = A(:,pivots);
-nullBasis = null(A);
-disp(columnBasis)
-disp(size(columnBasis,2))   % 3
-disp(nullBasis)
-disp(size(nullBasis,2))     % 2
+A = [1 2 -2 2 -1;
+    0 0 1 2 4;
+    0 0 0 1 -2;
+    0 0 0 0 0];
+
+%rref function returns 2 values: Row reduced form and *pivot indices
+[R, p]= rref(A);
+B=A(:,p);
+disp(B);
+
+N=null(A,'r');
+disp(N);
+disp(size(B,2))
+disp(size(N,2))
 ```
 
 #### Question 6 — Verify the rank–nullity theorem
@@ -1207,17 +1225,12 @@ The stated codomain is R³. The scripts assume the plus sign before `3x − y` w
 **Manual solution**
 
 ```matlab
-e1 = [1; 0];
-e2 = [0; 1];
-A = zeros(3,2);
-inputBasis = [e1 e2];
-for j = 1:2
-    x = inputBasis(1,j);
-    y = inputBasis(2,j);
-    A(:,j) = [x+2*y; 2*x-y; 3*x-y];
-end
-disp(A)
-disp(2*A(:,1) - A(:,2))
+T= @(x,y)[x+2*y;2*x-y;3*x-y];
+A=[T(1,0) T(0,1)];
+disp(A);
+v = [2;-1];
+result = A*v;
+disp(result);
 ```
 
 **Built-in solution (Symbolic Math Toolbox)**
@@ -1479,11 +1492,17 @@ disp(max(abs(G(:) - reshape(eye(3),[],1))) < 1e-12)
 **Built-in solution**
 
 ```matlab
-A = [1/sqrt(2), 1/sqrt(2), 0; 1/sqrt(2), -1/sqrt(2), 0; 0, 0, 1];
+u = [1;1;0]/sqrt(2);
+v = [1;-1;0]/sqrt(2);
+w = [0;0;1];
 
-G = A.'*A;
-disp(G)
-disp(norm(G - eye(3),'fro') < 1e-12)
+A = [u v w];
+
+if norm(A'*A-eye(3)) < 1e-10
+    disp('Orthonormal');
+else
+    disp('Not Orthonormal');
+end
 ```
 
 #### Question 2 — Convert the given vectors into orthonormal vectors
@@ -1492,22 +1511,17 @@ disp(norm(G - eye(3),'fro') < 1e-12)
 
 ```matlab
 A = [1 3; 2 -1];
-
-[m,n] = size(A);
-Q = zeros(m,n);
-R = zeros(n);
-for j = 1:n
-    v = A(:,j);
-    for i = 1:j-1
-        R(i,j) = Q(:,i).'*v;
-        v = v - R(i,j)*Q(:,i);
+[m,n]= size(A);
+Q= zeros(m,n);
+for i=1:n
+    v= A(:,i);
+    for j= 1:i-1
+        v=v-dot(v,Q(:,j))*Q(:,j);
     end
-    R(j,j) = sqrt(sum(v.^2));
-    Q(:,j) = v/R(j,j);
-end
+    Q(:,i)=v/norm(v);
 
-disp(Q)
-disp(Q.'*Q)
+end
+disp(Q);
 ```
 
 **Built-in solution**
@@ -1527,22 +1541,17 @@ disp(Q.'*Q)
 
 ```matlab
 A = [1 2 1; 2 -1 1; -1 0 3];
-
-[m,n] = size(A);
-Q = zeros(m,n);
-R = zeros(n);
-for j = 1:n
-    v = A(:,j);
-    for i = 1:j-1
-        R(i,j) = Q(:,i).'*v;
-        v = v - R(i,j)*Q(:,i);
+[m,n]= size(A);
+Q= zeros(m,n);
+for i=1:n
+    v= A(:,i);
+    for j= 1:i-1
+        v=v-dot(v,Q(:,j))*Q(:,j);
     end
-    R(j,j) = sqrt(sum(v.^2));
-    Q(:,j) = v/R(j,j);
-end
+    Q(:,i)=v/norm(v);
 
-disp(Q)
-disp(Q.'*Q)
+end
+disp(Q);
 ```
 
 **Built-in solution**
@@ -1565,19 +1574,24 @@ A = [1 2 1; 2 4 6; 1 1 1];
 
 [m,n] = size(A);
 Q = zeros(m,n);
-R = zeros(n);
-for j = 1:n
-    v = A(:,j);
-    for i = 1:j-1
-        R(i,j) = Q(:,i).'*v;
-        v = v - R(i,j)*Q(:,i);
+
+for i = 1:n
+    v = A(:,i);
+
+    for j = 1:i-1
+        v = v - dot(v,Q(:,j))*Q(:,j);
     end
-    R(j,j) = sqrt(sum(v.^2));
-    Q(:,j) = v/R(j,j);
+
+    Q(:,i) = v/norm(v);
 end
 
-disp(Q)
-disp(R)
+R = Q'*A;
+
+disp(Q);
+disp(R);
+
+% Verification
+disp(Q*R);
 disp(norm(A-Q*R,'fro'))
 ```
 
@@ -1605,23 +1619,26 @@ The manual version builds the SVD from the eigendecomposition of the Gram matrix
 
 ```matlab
 A = [3 1 1; -1 3 1];
-
-[V,D] = eig(A.'*A);
-[lambda,order] = sort(diag(D),'descend');
-V = V(:,order);
-
-sigma = sqrt(lambda(1:2));
-U = zeros(2);
-S = zeros(2,3);
-for j = 1:2
-    U(:,j) = A*V(:,j)/sigma(j);
-    S(j,j) = sigma(j);
+[m,n]=size(A);
+[V,D]=eig(A'*A);
+[d,idx]=sort(diag(D),'descend');
+V=V(:,idx);
+S=zeros(m,n);
+U=zeros(m,m);
+s=sqrt(max(d,0));
+r = rank(A);
+for i = 1:r
+    S(i,i)=s(i);
+    U(:,i)=(A*V(:,i))/s(i);
 end
-
-disp(U)
-disp(S)
-disp(V)
-disp(norm(A - U*S*V.','fro'))
+if r < m
+    U(:,r+1:m) = null(U(:,1:r)');
+end
+disp(U);
+disp(V);
+disp(S);
+disp(U*S*V');
+disp(norm(A-U*S*V','fro'))
 ```
 
 **Built-in solution**
@@ -1639,36 +1656,38 @@ disp(norm(A - U*S*V.','fro'))
 
 #### Question 2 — Compute the SVD and construct the rank-1 approximation
 
-The matrix is already rank 1. The manual version factors it as an outer product and uses reflections to complete the singular-vector bases.
+The matrix is already rank 1. The manual version uses eigendecomposition and completes the basis of left singular vectors with `null`.
 
 **Manual solution**
 
 ```matlab
 A = [1 2 3; 2 4 6; 3 6 9; 4 8 12];
+[m,n]=size(A);
+[V,D]=eig(A'*A);
+[d,idx]=sort(diag(D),'descend');
+V=V(:,idx);
+S=zeros(m,n);
+U=zeros(m,m);
+s=sqrt(max(d,0));
+r = rank(A);
+for i = 1:r
+    S(i,i)=s(i);
+    U(:,i)=(A*V(:,i))/s(i);
+end
 
-p = A(:,1);
-v = A(1,:).'/p(1);
-np = sqrt(sum(p.^2));
-nv = sqrt(sum(v.^2));
-u1 = p/np;
-v1 = v/nv;
+if r < m
+    U(:,r+1:m) = null(U(:,1:r)');%extending U
+end
 
-% Reflect e1 onto each leading singular vector.
-eU = [1; 0; 0; 0];
-eV = [1; 0; 0];
-wU = eU - u1;
-wV = eV - v1;
-U = eye(4) - 2*(wU*wU.')/(wU.'*wU);
-V = eye(3) - 2*(wV*wV.')/(wV.'*wV);
-S = zeros(4,3);
-S(1,1) = np*nv;
-
-A1 = S(1,1)*U(:,1)*V(:,1).';
-disp(U)
-disp(S)
-disp(V)
-disp(A1)
-disp(norm(A-A1,'fro'))
+disp(U);
+disp(V);
+disp(S);
+%u1,v1,s1
+U1= U(:,1);
+V1= V(:,1);
+r1= U1*S(1,1)*V1'; %rank 1 approx
+disp(r1);
+disp(norm(A-r1,'fro'))
 ```
 
 **Built-in solution**
@@ -1695,21 +1714,38 @@ The matrix has rank 2. The rank-2 approximation reconstructs it up to rounding e
 ```matlab
 A = [1 2 3; 4 5 6; 7 8 9; 10 11 12];
 
-[V,D] = eig(A.'*A);
-[lambda,order] = sort(diag(D),'descend');
-V = V(:,order);
+[m,n] = size(A);
+[V,D] = eig(A'*A);
+[d,idx] = sort(diag(D),'descend');
+V = V(:,idx);
 
-% sigma_j*u_j = A*v_j, so each term is (A*v_j)*v_j'.
-v1 = V(:,1);
-v2 = V(:,2);
-A1 = (A*v1)*v1.';
-A2 = A1 + (A*v2)*v2.';
+S = zeros(m,n);
+U = zeros(m,m);
+s = sqrt(max(d,0));
 
-disp(A1)
-disp(A2)
-error1 = norm(A-A1,'fro');
-error2 = norm(A-A2,'fro');
-fprintf('Rank-1 error: %.8g\nRank-2 error: %.8g\n',error1,error2);
+r = rank(A);
+
+for i = 1:r
+    S(i,i) = s(i);
+    U(:,i) = A*V(:,i)/s(i);
+end
+
+A1 = U(:,1)*S(1,1)*V(:,1)';
+A2= U(:,1:2)*S(1:2,1:2)*V(:,1:2)';
+disp(A1);
+disp(A2);
+e1=norm(A-A1,'fro');
+e2=norm(A-A2,'fro');
+disp(e1);
+disp(e2);
+
+if e1 < e2
+    disp('Rank 1 is more accurate');
+elseif e2 < e1
+    disp('Rank 2 is more accurate');
+else
+    disp('Both are equally accurate');
+end
 ```
 
 **Built-in solution**
@@ -1739,36 +1775,30 @@ Only PC1 has nonzero variance. The sign of a principal component and its scores 
 **Manual solution**
 
 ```matlab
-X = [(2:9).' (1:8).'];
-
-n = size(X,1);
-Xc = X - sum(X,1)/n;
-C = (Xc.'*Xc)/(n-1);
-[V,D] = eig(C);
-[latent,idx] = sort(diag(D),'descend');
-coeff = V(:,idx);
-
-disp(Xc)
+A = [2 1; 3 2; 4 3; 5 4; 6 5; 7 6; 8 7; 9 8];
+m = size(A,1);
+B = A - mean(A);
+C = cov(B);
+disp(B)
 disp(C)
-scores = Xc*coeff(:,1);
-
-disp(coeff)
-disp(latent)
-disp(scores)
+[V,D] = eig(C);
+[eigenval,idx] = sort(diag(D),'descend');
+V = V(:,idx);
+PC1 = V(:,1);
+disp(eigenval)
+disp(V)
+disp(PC1)
+pro_data = B*PC1;
+disp(pro_data)
 
 figure
 subplot(1,2,1)
-scatter(X(:,1),X(:,2),40,'filled')
-xlabel('Feature 1')
-ylabel('Feature 2')
+scatter(A(:,1),A(:,2))
 title('Original data')
-grid on
 subplot(1,2,2)
-scatter(scores,zeros(size(scores)),40,'filled')
+scatter(pro_data,zeros(m,1))
 xlabel('PC1 score')
-yticks([])
-title('One-dimensional projection')
-grid on
+title('Projected data')
 ```
 
 **Built-in solution (Statistics and Machine Learning Toolbox)**
@@ -1805,20 +1835,24 @@ The three output columns are PC scores. Only PC1 has nonzero variance because al
 **Manual solution**
 
 ```matlab
-X = [(2:9).' (1:8).' (3:10).' (0:7).'];
-
-n = size(X,1);
-Xc = X - sum(X,1)/n;
-C = (Xc.'*Xc)/(n-1);
+A = [(2:9)' (1:8)' (3:10)' (0:7)'];
+B = A - mean(A);
+C = cov(B);
 [V,D] = eig(C);
-[latent,idx] = sort(diag(D),'descend');
-coeff = V(:,idx);
+[eigval,idx] = sort(diag(D),'descend');
+V = V(:,idx);
+PC1 = V(:,1);
+PC2 = V(:,2);
+PC3 = V(:,3);
+projectedData = B*[PC1 PC2 PC3];
+disp(projectedData)
 
-scores = Xc*coeff(:,1:3);
-
-disp(coeff(:,1:3))
-disp(latent)
-disp(scores)
+figure
+scatter3(projectedData(:,1),projectedData(:,2),projectedData(:,3))
+xlabel('PC1')
+ylabel('PC2')
+zlabel('PC3')
+title('3D PCA scores')
 ```
 
 **Built-in solution (Statistics and Machine Learning Toolbox)**
